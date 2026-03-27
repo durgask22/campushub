@@ -1,42 +1,121 @@
----
-name: frontend-design
-description: Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.
-license: Complete terms in LICENSE.txt
----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}CampusHub{% endblock %} — College Club Event Management</title>
+  <meta name="description" content="CampusHub — Discover clubs, join events, and build campus community." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23c8612a'/><text y='22' x='7' font-size='18' fill='white'>⬡</text></svg>" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+<body>
 
-This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
+<!-- ─── Navbar ─────────────────────────────────────────────────────────── -->
+<nav class="navbar">
+  <div class="container">
+    <div class="navbar-inner">
+      <a href="{{ url_for('home') }}" class="navbar-brand">
+        <div class="navbar-logo">⬡</div>
+        Campus<span class="navbar-brand-dot">Hub</span>
+      </a>
 
-The user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.
+      <div class="navbar-links">
+        <a href="{{ url_for('home') }}"   class="navbar-link">Home</a>
+        <a href="{{ url_for('clubs') }}"  class="navbar-link">Clubs</a>
+        <a href="{{ url_for('events') }}" class="navbar-link">Events</a>
+        {% if current_user %}
+          <a href="{{ url_for('dashboard') }}" class="navbar-link">Dashboard</a>
+        {% endif %}
+      </div>
 
-## Design Thinking
+      <div class="navbar-actions">
+        {% if current_user %}
+          <a href="{{ url_for('dashboard') }}" class="user-chip">
+            <div class="user-avatar">{{ current_user.name[:2].upper() }}</div>
+            {{ current_user.name.split()[0] }}
+          </a>
+          <a href="{{ url_for('logout') }}" class="btn btn-ghost btn-sm">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login') }}"    class="btn btn-ghost btn-sm">Sign In</a>
+          <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Join Free</a>
+        {% endif %}
+        <div class="hamburger" id="hamburger" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
 
-Before coding, understand the context and commit to a BOLD aesthetic direction:
-- **Purpose**: What problem does this interface solve? Who uses it?
-- **Tone**: Pick an extreme: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian, etc. There are so many flavors to choose from. Use these for inspiration but design one that is true to the aesthetic direction.
-- **Constraints**: Technical requirements (framework, performance, accessibility).
-- **Differentiation**: What makes this UNFORGETTABLE? What's the one thing someone will remember?
+<!-- ─── Mobile Menu ────────────────────────────────────────────────────── -->
+<div id="mobile-menu" style="display:none; background:#fff; border-bottom:1.5px solid var(--border); padding:12px 24px; box-shadow:var(--shadow-md);">
+  <a href="{{ url_for('home') }}"  style="display:block;padding:10px 0;font-size:15px;color:var(--ink2);border-bottom:1px solid var(--border);">Home</a>
+  <a href="{{ url_for('clubs') }}" style="display:block;padding:10px 0;font-size:15px;color:var(--ink2);border-bottom:1px solid var(--border);">Clubs</a>
+  <a href="{{ url_for('events') }}" style="display:block;padding:10px 0;font-size:15px;color:var(--ink2);border-bottom:1px solid var(--border);">Events</a>
+  {% if current_user %}
+    <a href="{{ url_for('dashboard') }}" style="display:block;padding:10px 0;font-size:15px;color:var(--ink2);border-bottom:1px solid var(--border);">Dashboard</a>
+    <a href="{{ url_for('logout') }}" style="display:block;padding:10px 0;font-size:15px;color:var(--red);">Logout</a>
+  {% else %}
+    <a href="{{ url_for('login') }}"    style="display:block;padding:10px 0;font-size:15px;color:var(--ink2);">Sign In</a>
+    <a href="{{ url_for('register') }}" style="display:block;padding:10px 0;font-size:15px;color:var(--accent);font-weight:600;">Join Free</a>
+  {% endif %}
+</div>
 
-**CRITICAL**: Choose a clear conceptual direction and execute it with precision. Bold maximalism and refined minimalism both work - the key is intentionality, not intensity.
+<!-- ─── Flash Messages ─────────────────────────────────────────────────── -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container" style="margin-top:16px;">
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+            <span>{{ '✓' if category == 'success' else ('⚠' if category == 'warning' else ('ℹ' if category == 'info' else '✕')) }}</span>
+            <span style="flex:1;">{{ message }}</span>
+            <button class="alert-close" style="background:none;border:none;cursor:pointer;font-size:16px;color:inherit;opacity:.6;padding:0 4px;">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+{% endwith %}
 
-Then implement working code (HTML/CSS/JS, React, Vue, etc.) that is:
-- Production-grade and functional
-- Visually striking and memorable
-- Cohesive with a clear aesthetic point-of-view
-- Meticulously refined in every detail
+<!-- ─── Main Content ───────────────────────────────────────────────────── -->
+{% block content %}{% endblock %}
 
-## Frontend Aesthetics Guidelines
+<!-- ─── Footer ────────────────────────────────────────────────────────── -->
+{% block footer %}
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">Campus<span style="color:#e8a888;">Hub</span></div>
+        <p style="font-size:14px;line-height:1.7;max-width:300px;">
+          The all-in-one platform for college clubs and campus events. Connect, engage, and grow.
+        </p>
+      </div>
+      <div>
+        <h4>Explore</h4>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('clubs') }}">All Clubs</a>
+        <a href="{{ url_for('events') }}">All Events</a>
+      </div>
+      <div>
+        <h4>Account</h4>
+        {% if current_user %}
+          <a href="{{ url_for('dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Sign In</a>
+          <a href="{{ url_for('register') }}">Register</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="footer-bottom">© 2025 CampusHub. Built for student community.</div>
+  </div>
+</footer>
+{% endblock %}
 
-Focus on:
-- **Typography**: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics; unexpected, characterful font choices. Pair a distinctive display font with a refined body font.
-- **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
-- **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Use scroll-triggering and hover states that surprise.
-- **Spatial Composition**: Unexpected layouts. Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative space OR controlled density.
-- **Backgrounds & Visual Details**: Create atmosphere and depth rather than defaulting to solid colors. Add contextual effects and textures that match the overall aesthetic. Apply creative forms like gradient meshes, noise textures, geometric patterns, layered transparencies, dramatic shadows, decorative borders, custom cursors, and grain overlays.
-
-NEVER use generic AI-generated aesthetics like overused font families (Inter, Roboto, Arial, system fonts), cliched color schemes (particularly purple gradients on white backgrounds), predictable layouts and component patterns, and cookie-cutter design that lacks context-specific character.
-
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. NEVER converge on common choices (Space Grotesk, for example) across generations.
-
-**IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
-
-Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
