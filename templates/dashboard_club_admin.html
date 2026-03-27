@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Club Admin Dashboard{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <span class="sidebar-heading">Navigation</span>
+      <a href="{{ url_for('home') }}"      class="sidebar-link">🏠 Home</a>
+      <a href="{{ url_for('clubs') }}"     class="sidebar-link">◎ Clubs</a>
+      <a href="{{ url_for('events') }}"    class="sidebar-link">◈ Events</a>
+      <a href="{{ url_for('dashboard') }}" class="sidebar-link active">⊟ Dashboard</a>
+    </div>
+    {% if club %}
+    <div class="sidebar-section" style="margin-top:8px;">
+      <span class="sidebar-heading">Manage Club</span>
+      <a href="{{ url_for('create_event') }}"  class="sidebar-link">＋ New Event</a>
+      <a href="{{ url_for('edit_club') }}"     class="sidebar-link">✎ Edit Profile</a>
+    </div>
+    {% else %}
+    <div class="sidebar-section" style="margin-top:8px;">
+      <span class="sidebar-heading">Setup</span>
+      <a href="{{ url_for('create_club') }}" class="sidebar-link">＋ Create Club</a>
+    </div>
+    {% endif %}
+    <div class="sidebar-section" style="margin-top:8px;">
+      <a href="{{ url_for('logout') }}" class="sidebar-link">⎋ Logout</a>
+    </div>
+    <div style="padding:16px 14px;">
+      <div style="background:var(--green-bg);border:1.5px solid var(--green)33;border-radius:var(--r);padding:14px;">
+        <div class="member-avatar" style="margin-bottom:10px;background:var(--green);">{{ current_user.name[:2].upper() }}</div>
+        <div style="font-weight:600;font-size:13px;">{{ current_user.name }}</div>
+        <span class="badge badge-approved" style="margin-top:6px;">Club Admin</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="dash-content">
+
+    {% if not club %}
+    <!-- No Club Yet -->
+    <div class="dash-header">
+      <h1>Welcome, {{ current_user.name.split()[0] }}!</h1>
+      <p>You don't have a club yet. Create one to get started.</p>
+    </div>
+    <div class="empty-state" style="margin-top:24px;">
+      <div class="empty-state-icon">◎</div>
+      <h3>No Club Created</h3>
+      <p>Create your club and start managing events.</p>
+      <a href="{{ url_for('create_club') }}" class="btn btn-primary" style="margin-top:16px;">Create Club →</a>
+    </div>
+
+    {% else %}
+    <div class="dash-header fade-in" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1>{{ club.name }}</h1>
+        <p>{{ club.category }} · <span class="badge badge-{{ club.status }}">{{ club.status|capitalize }}</span></p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <a href="{{ url_for('create_event') }}" class="btn btn-primary btn-sm">＋ New Event</a>
+        <a href="{{ url_for('edit_club') }}"    class="btn btn-ghost btn-sm">Edit Club</a>
+      </div>
+    </div>
+
+    {% if club.status == 'pending' %}
+    <div class="alert alert-warning" style="margin-bottom:20px;">
+      ⚠ Your club is pending approval by the admin. You can create events once it's approved.
+    </div>
+    {% endif %}
+
+    <!-- Stats -->
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-card-icon">👥</div>
+        <div class="stat-card-value">{{ club.member_count }}</div>
+        <div class="stat-card-label">Members</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon">📅</div>
+        <div class="stat-card-value">{{ my_events|length }}</div>
+        <div class="stat-card-label">Total Events</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon">✓</div>
+        <div class="stat-card-value">{{ my_events|sum(attribute='reg_count') }}</div>
+        <div class="stat-card-label">Total Registrations</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon">🔔</div>
+        <div class="stat-card-value">{{ my_events|selectattr('status','eq','upcoming')|list|length }}</div>
+        <div class="stat-card-label">Upcoming</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tab-events">Events</button>
+      <button class="tab-btn" data-tab="tab-members">Members</button>
+    </div>
+    <div>
+      <!-- Events Tab -->
+      <div class="tab-panel active" id="tab-events">
+        <div class="section-header">
+          <h2 style="font-size:16px;">All Events ({{ my_events|length }})</h2>
+          <a href="{{ url_for('create_event') }}" class="btn btn-primary btn-sm">＋ Add Event</a>
+        </div>
+        {% if my_events %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>Event</th><th>Date</th><th>Venue</th><th>Registrations</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {% for event in my_events %}
+              <tr>
+                <td>
+                  <div style="font-weight:500;">{{ event.title }}</div>
+                  <div style="font-size:12px;color:var(--muted);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ event.description[:60] }}…</div>
+                </td>
+                <td style="white-space:nowrap;">{{ event.event_date }}<br><span style="font-size:11px;color:var(--muted);">{{ event.event_time }}</span></td>
+                <td style="font-size:13px;color:var(--muted);">{{ event.venue }}</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:13px;font-weight:500;">{{ event.reg_count }}/{{ event.max_participants }}</span>
+                    {% set pct = (event.reg_count / event.max_participants * 100)|int %}
+                    <div class="progress-bar-wrap" data-progress="{{ pct }}" style="width:60px;">
+                      <div class="progress-bar-fill" style="width:0%"></div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge badge-{{ event.status }}">{{ event.status|capitalize }}</span></td>
+                <td>
+                  <div class="table-actions">
+                    <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-ghost btn-sm">View</a>
+                    <a href="{{ url_for('edit_event', event_id=event.id) }}" class="btn btn-outline btn-sm">Edit</a>
+                    <form method="POST" action="{{ url_for('delete_event', event_id=event.id) }}"
+                      onsubmit="return confirm('Delete {{ event.title }}?')">
+                      <button type="submit" class="btn btn-danger btn-sm">Del</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">📅</div>
+          <h3>No events yet</h3>
+          <p>Create your first event to get started.</p>
+          <a href="{{ url_for('create_event') }}" class="btn btn-primary" style="margin-top:16px;">Create Event</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Members Tab -->
+      <div class="tab-panel" id="tab-members">
+        <h2 style="font-size:16px;margin-bottom:16px;">Members ({{ members|length }})</h2>
+        {% if members %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Member</th><th>Email</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for m in members %}
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="member-avatar" style="width:32px;height:32px;font-size:11px;">{{ m.name[:2].upper() }}</div>
+                    <span style="font-weight:500;font-size:14px;">{{ m.name }}</span>
+                  </div>
+                </td>
+                <td style="color:var(--muted);font-size:13px;">{{ m.email }}</td>
+                <td style="color:var(--muted);font-size:13px;">{{ m.joined_at[:10] if m.joined_at else '' }}</td>
+                <td>
+                  {% if m.id != current_user.id %}
+                  <form method="POST" action="{{ url_for('remove_member', user_id=m.id) }}"
+                    onsubmit="return confirm('Remove {{ m.name }} from club?')">
+                    <input type="hidden" name="club_id" value="{{ club.id }}" />
+                    <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);">Remove</button>
+                  </form>
+                  {% else %}
+                  <span style="font-size:12px;color:var(--muted);">You (Admin)</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">👥</div>
+          <h3>No members yet</h3>
+          <p>Share your club page to attract members.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+{% endblock %}

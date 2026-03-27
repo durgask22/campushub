@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <span class="sidebar-heading">Navigation</span>
+      <a href="{{ url_for('home') }}"      class="sidebar-link">🏠 Home</a>
+      <a href="{{ url_for('clubs') }}"     class="sidebar-link">◎ Clubs</a>
+      <a href="{{ url_for('events') }}"    class="sidebar-link">◈ Events</a>
+      <a href="{{ url_for('dashboard') }}" class="sidebar-link active">⊛ Admin Panel</a>
+    </div>
+    <div class="sidebar-section" style="margin-top:8px;">
+      <span class="sidebar-heading">Manage</span>
+      <a href="{{ url_for('create_event') }}" class="sidebar-link">＋ New Event</a>
+    </div>
+    <div class="sidebar-section" style="margin-top:8px;">
+      <a href="{{ url_for('logout') }}" class="sidebar-link">⎋ Logout</a>
+    </div>
+    <div style="padding:16px 14px;">
+      <div style="background:var(--amber-bg);border:1.5px solid var(--amber)33;border-radius:var(--r);padding:14px;">
+        <div class="member-avatar" style="margin-bottom:10px;background:var(--amber);">{{ current_user.name[:2].upper() }}</div>
+        <div style="font-weight:600;font-size:13px;">{{ current_user.name }}</div>
+        <span class="badge badge-pending" style="margin-top:6px;">Super Admin</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="dash-content">
+    <div class="dash-header fade-in">
+      <h1>Admin Control Panel</h1>
+      <p>Manage the entire CampusHub platform.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-card-icon">👥</div>
+        <div class="stat-card-value">{{ total_users }}</div>
+        <div class="stat-card-label">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon">◎</div>
+        <div class="stat-card-value">{{ total_clubs }}</div>
+        <div class="stat-card-label">Total Clubs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon">📅</div>
+        <div class="stat-card-value">{{ total_events }}</div>
+        <div class="stat-card-label">Total Events</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon">✓</div>
+        <div class="stat-card-value">{{ total_regs }}</div>
+        <div class="stat-card-label">Registrations</div>
+      </div>
+    </div>
+
+    <!-- Pending Approvals Alert -->
+    {% if pending_clubs %}
+    <div class="alert alert-warning" style="margin-bottom:20px;">
+      ⚠ <strong>{{ pending_clubs|length }}</strong> club(s) awaiting your approval.
+    </div>
+    {% endif %}
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tab-overview">Overview</button>
+      <button class="tab-btn" data-tab="tab-clubs">All Clubs</button>
+      <button class="tab-btn" data-tab="tab-events">All Events</button>
+      <button class="tab-btn" data-tab="tab-users">Users</button>
+    </div>
+    <div>
+
+      <!-- Overview Tab -->
+      <div class="tab-panel active" id="tab-overview">
+        <div class="grid-2" style="gap:20px;">
+          <!-- Pending Clubs -->
+          <div>
+            <h2 style="font-size:16px;margin-bottom:14px;">⚠ Pending Club Approvals ({{ pending_clubs|length }})</h2>
+            {% if pending_clubs %}
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              {% for club in pending_clubs %}
+              <div class="card" style="padding:16px;display:flex;align-items:center;gap:12px;">
+                <div class="member-avatar" style="border-radius:10px;">{{ club.name[:2].upper() }}</div>
+                <div style="flex:1;">
+                  <div style="font-weight:600;font-size:14px;">{{ club.name }}</div>
+                  <div style="font-size:12px;color:var(--muted);">{{ club.category }}</div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                  <form method="POST" action="{{ url_for('admin_club_action', action='approve', club_id=club.id) }}">
+                    <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                  </form>
+                  <form method="POST" action="{{ url_for('admin_club_action', action='reject', club_id=club.id) }}">
+                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                  </form>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding:32px;">
+              <p>No pending approvals. ✓</p>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Platform Summary -->
+          <div>
+            <h2 style="font-size:16px;margin-bottom:14px;">📊 Platform Summary</h2>
+            <div class="info-card">
+              <div class="info-row"><span class="label">Approved Clubs</span><span class="value badge badge-approved" style="padding:4px 10px;">{{ all_clubs|selectattr('status','eq','approved')|list|length }}</span></div>
+              <div class="info-row"><span class="label">Pending Clubs</span><span class="value badge badge-pending" style="padding:4px 10px;">{{ all_clubs|selectattr('status','eq','pending')|list|length }}</span></div>
+              <div class="info-row"><span class="label">Rejected Clubs</span><span class="value badge badge-rejected" style="padding:4px 10px;">{{ all_clubs|selectattr('status','eq','rejected')|list|length }}</span></div>
+              <div class="info-row"><span class="label">Upcoming Events</span><span class="value">{{ all_events|selectattr('status','eq','upcoming')|list|length }}</span></div>
+              <div class="info-row"><span class="label">Ongoing Events</span><span class="value">{{ all_events|selectattr('status','eq','ongoing')|list|length }}</span></div>
+              <div class="info-row"><span class="label">Completed Events</span><span class="value">{{ all_events|selectattr('status','eq','completed')|list|length }}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- All Clubs Tab -->
+      <div class="tab-panel" id="tab-clubs">
+        <div class="section-header">
+          <h2 style="font-size:16px;">All Clubs ({{ all_clubs|length }})</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Club</th><th>Category</th><th>Admin</th><th>Members</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for club in all_clubs %}
+              <tr>
+                <td>
+                  <div style="font-weight:500;">{{ club.name }}</div>
+                  <div style="font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ club.description[:60] if club.description else '' }}…</div>
+                </td>
+                <td><span class="badge badge-cat">{{ club.category }}</span></td>
+                <td style="font-size:13px;color:var(--muted);">{{ club.admin_name or '—' }}</td>
+                <td style="font-size:13px;">{{ club.member_count }}</td>
+                <td><span class="badge badge-{{ club.status }}">{{ club.status|capitalize }}</span></td>
+                <td>
+                  <div class="table-actions">
+                    <a href="{{ url_for('club_detail', club_id=club.id) }}" class="btn btn-ghost btn-sm">View</a>
+                    {% if club.status == 'pending' %}
+                      <form method="POST" action="{{ url_for('admin_club_action', action='approve', club_id=club.id) }}">
+                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                      </form>
+                      <form method="POST" action="{{ url_for('admin_club_action', action='reject', club_id=club.id) }}">
+                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                      </form>
+                    {% elif club.status == 'approved' %}
+                      <form method="POST" action="{{ url_for('admin_club_action', action='reject', club_id=club.id) }}">
+                        <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);">Suspend</button>
+                      </form>
+                    {% elif club.status == 'rejected' %}
+                      <form method="POST" action="{{ url_for('admin_club_action', action='approve', club_id=club.id) }}">
+                        <button type="submit" class="btn btn-outline btn-sm">Restore</button>
+                      </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('admin_club_action', action='delete', club_id=club.id) }}"
+                      onsubmit="return confirm('Permanently delete {{ club.name }} and all its events?')">
+                      <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- All Events Tab -->
+      <div class="tab-panel" id="tab-events">
+        <div class="section-header">
+          <h2 style="font-size:16px;">All Events ({{ all_events|length }})</h2>
+          <a href="{{ url_for('create_event') }}" class="btn btn-primary btn-sm">＋ Add Event</a>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Event</th><th>Club</th><th>Date</th><th>Venue</th><th>Registrations</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for event in all_events %}
+              <tr>
+                <td style="font-weight:500;max-width:180px;">{{ event.title }}</td>
+                <td style="font-size:13px;color:var(--muted);">{{ event.club_name }}</td>
+                <td style="font-size:13px;white-space:nowrap;">{{ event.event_date }}</td>
+                <td style="font-size:12px;color:var(--muted);">{{ event.venue }}</td>
+                <td style="font-size:13px;">{{ event.reg_count }}/{{ event.max_participants }}</td>
+                <td><span class="badge badge-{{ event.status }}">{{ event.status|capitalize }}</span></td>
+                <td>
+                  <div class="table-actions">
+                    <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-ghost btn-sm">View</a>
+                    <a href="{{ url_for('edit_event', event_id=event.id) }}" class="btn btn-outline btn-sm">Edit</a>
+                    <form method="POST" action="{{ url_for('delete_event', event_id=event.id) }}"
+                      onsubmit="return confirm('Delete this event?')">
+                      <button type="submit" class="btn btn-danger btn-sm">Del</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Users Tab -->
+      <div class="tab-panel" id="tab-users">
+        <div class="section-header">
+          <h2 style="font-size:16px;">All Users ({{ recent_users|length }})</h2>
+          <input type="text" id="live-search" data-target=".user-row"
+            class="form-control" style="width:220px;" placeholder="Filter users…" />
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for u in recent_users %}
+              <tr class="user-row">
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="member-avatar" style="width:30px;height:30px;font-size:10px;
+                      background:{{ 'var(--amber)' if u.role == 'super_admin' else ('var(--green)' if u.role == 'club_admin' else 'var(--accent)') }};">
+                      {{ u.name[:2].upper() }}
+                    </div>
+                    <span style="font-weight:500;font-size:14px;">{{ u.name }}</span>
+                  </div>
+                </td>
+                <td style="color:var(--muted);font-size:13px;">{{ u.email }}</td>
+                <td>
+                  <span class="badge {{ 'badge-pending' if u.role=='super_admin' else ('badge-approved' if u.role=='club_admin' else 'badge-accent') }}">
+                    {{ u.role.replace('_',' ')|capitalize }}
+                  </span>
+                </td>
+                <td style="color:var(--muted);font-size:13px;">{{ u.created_at[:10] if u.created_at else '' }}</td>
+                <td>
+                  {% if u.id != current_user.id and u.role != 'super_admin' %}
+                  <form method="POST" action="{{ url_for('deactivate_user', user_id=u.id) }}"
+                    onsubmit="return confirm('Deactivate {{ u.name }}?')">
+                    <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);">Deactivate</button>
+                  </form>
+                  {% else %}
+                  <span style="font-size:12px;color:var(--muted);">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+{% endblock %}

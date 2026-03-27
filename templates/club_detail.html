@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}{{ club.name }}{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:32px;padding-bottom:56px;">
+
+  <a href="{{ url_for('clubs') }}" class="btn btn-ghost btn-sm" style="margin-bottom:20px;">← Back to Clubs</a>
+
+  <!-- Cover -->
+  <div class="detail-cover {{ club.category|lower if club.category else '' }}">
+    <div class="detail-cover-badges">
+      <span class="badge badge-cat">{{ club.category }}</span>
+      <span class="badge badge-{{ club.status }}">{{ club.status|capitalize }}</span>
+    </div>
+    <div style="position:absolute;right:24px;bottom:16px;font-size:54px;opacity:.12;color:#fff;">
+      {% if club.category == 'Technology' %}💻
+      {% elif club.category == 'Environment' %}🌿
+      {% elif club.category == 'Academic' %}📚
+      {% elif club.category == 'Arts' %}🎨
+      {% elif club.category == 'Business' %}💼
+      {% else %}⭐
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Title Row -->
+  <div class="card" style="border-radius:0 0 var(--r-lg) var(--r-lg);border-top:none;margin-bottom:24px;">
+    <div style="padding:24px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;">
+      <div>
+        <h1 style="font-size:26px;">{{ club.name }}</h1>
+        <div style="color:var(--muted);font-size:14px;margin-top:4px;">
+          👥 {{ club.member_count }} members &nbsp;·&nbsp;
+          📅 Founded {{ club.created_at[:7] if club.created_at else 'N/A' }}
+          {% if club.admin_name %}&nbsp;·&nbsp; Managed by {{ club.admin_name }}{% endif %}
+        </div>
+      </div>
+      {% if current_user and current_user.role == 'student' %}
+        <div>
+          {% if is_member %}
+            <form method="POST" action="{{ url_for('leave_club', club_id=club.id) }}"
+              onsubmit="return confirm('Leave {{ club.name }}?')">
+              <button type="submit" class="btn btn-danger btn-sm">Leave Club</button>
+            </form>
+          {% else %}
+            <form method="POST" action="{{ url_for('join_club', club_id=club.id) }}">
+              <button type="submit" class="btn btn-primary">Join Club</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="detail-layout">
+    <!-- Left: Description + Events -->
+    <div>
+      <div class="info-card">
+        <h3>About {{ club.name }}</h3>
+        <p style="color:var(--muted);line-height:1.8;font-size:14px;">{{ club.description }}</p>
+      </div>
+
+      <!-- Events -->
+      <h3 style="font-size:16px;margin:24px 0 14px;">Club Events ({{ events|length }})</h3>
+      {% if events %}
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          {% for event in events %}
+          <div class="card card-hover" style="display:flex;gap:0;overflow:hidden;">
+            <div style="width:6px;background:{{ 'var(--blue)' if event.status == 'upcoming' else ('var(--green)' if event.status == 'ongoing' else 'var(--parchment)') }};flex-shrink:0;"></div>
+            <div style="padding:16px 18px;flex:1;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+                <div>
+                  <h4 style="font-size:15px;margin-bottom:4px;">{{ event.title }}</h4>
+                  <p style="font-size:12px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;">{{ event.description }}</p>
+                  <div style="display:flex;gap:12px;margin-top:8px;font-size:12px;color:var(--muted);">
+                    <span>📅 {{ event.event_date }} {{ event.event_time }}</span>
+                    <span>📍 {{ event.venue }}</span>
+                    <span>👥 {{ event.reg_count }}/{{ event.max_participants }}</span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                  <span class="badge badge-{{ event.status }}">{{ event.status|capitalize }}</span>
+                  <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-ghost btn-sm">Details</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state" style="padding:32px;">
+          <div class="empty-state-icon">📅</div>
+          <p>No events scheduled yet.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Right: Sidebar info -->
+    <div>
+      <div class="info-card">
+        <h3>Club Info</h3>
+        <div class="info-row">
+          <span class="label">Category</span>
+          <span class="value"><span class="badge badge-cat">{{ club.category }}</span></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Status</span>
+          <span class="value"><span class="badge badge-{{ club.status }}">{{ club.status|capitalize }}</span></span>
+        </div>
+        <div class="info-row">
+          <span class="label">Members</span>
+          <span class="value">{{ club.member_count }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Events</span>
+          <span class="value">{{ events|length }}</span>
+        </div>
+        {% if club.admin_name %}
+        <div class="info-row">
+          <span class="label">Managed by</span>
+          <span class="value">{{ club.admin_name }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Members -->
+      {% if members %}
+      <div class="info-card">
+        <h3>Recent Members</h3>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          {% for m in members %}
+          <div class="member-chip">
+            <div class="member-avatar">{{ m.name[:2].upper() }}</div>
+            <div>
+              <div class="member-name">{{ m.name }}</div>
+              <div class="member-email">Joined {{ m.joined_at[:10] if m.joined_at else '' }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if not current_user %}
+      <div class="info-card" style="text-align:center;background:var(--accent-light);border-color:var(--accent)33;">
+        <p style="font-size:14px;color:var(--ink2);margin-bottom:14px;">Sign in to join this club and register for events.</p>
+        <a href="{{ url_for('login') }}" class="btn btn-primary btn-block">Sign In to Join</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

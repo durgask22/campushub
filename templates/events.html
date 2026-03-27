@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Events{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="container page-hero-inner">
+    <h1>Campus Events</h1>
+    <p>Explore {{ events|length }} events happening across all clubs.</p>
+  </div>
+</div>
+
+<div class="container" style="padding-top:36px;padding-bottom:56px;">
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <form method="GET" action="{{ url_for('events') }}" style="display:contents;">
+      <div class="input-icon-wrap" style="flex:1;min-width:200px;">
+        <span class="icon">🔍</span>
+        <input type="text" name="q" class="form-control" placeholder="Search events…"
+          value="{{ search }}" style="margin-bottom:0;" />
+      </div>
+      <div class="filter-chips">
+        <a href="{{ url_for('events') }}"                    class="filter-chip {{ 'active' if not selected_status }}">All</a>
+        <a href="{{ url_for('events', status='upcoming') }}" class="filter-chip {{ 'active' if selected_status == 'upcoming' }}">Upcoming</a>
+        <a href="{{ url_for('events', status='ongoing') }}"  class="filter-chip {{ 'active' if selected_status == 'ongoing' }}">Ongoing</a>
+        <a href="{{ url_for('events', status='completed') }}"class="filter-chip {{ 'active' if selected_status == 'completed' }}">Completed</a>
+      </div>
+      {% if search %}
+        <button type="submit" class="btn btn-primary btn-sm">Search</button>
+        <a href="{{ url_for('events') }}" class="btn btn-ghost btn-sm">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  {% if events %}
+  <div class="grid-auto">
+    {% for event in events %}
+    <div class="card card-hover event-card fade-in">
+      <div class="card-cover {{ event.category|lower if event.category else '' }}">
+        <div style="position:absolute;bottom:12px;left:14px;z-index:2;">
+          <span class="badge badge-{{ event.status }}">{{ event.status|capitalize }}</span>
+        </div>
+        <div style="position:absolute;top:12px;right:12px;z-index:2;">
+          <span class="badge badge-cat">{{ event.club_name }}</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">{{ event.title }}</h3>
+        <p class="card-excerpt">{{ event.description }}</p>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-top:12px;font-size:12px;color:var(--muted);">
+          <span>📅 {{ event.event_date }} · {{ event.event_time }}</span>
+          <span>📍 {{ event.venue }}</span>
+          <span>👥 {{ event.reg_count }}/{{ event.max_participants }} registered</span>
+        </div>
+        {% set pct = (event.reg_count / event.max_participants * 100)|int %}
+        <div style="margin-top:10px;">
+          <div class="progress-bar-wrap" data-progress="{{ pct }}">
+            <div class="progress-bar-fill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer" style="display:flex;gap:8px;">
+        <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;">Details</a>
+        {% if current_user and event.status != 'completed' %}
+          <form method="POST" action="{{ url_for('register_event', event_id=event.id) }}" class="register-form">
+            <button type="submit" class="btn btn-primary btn-sm"
+              {% if event.reg_count >= event.max_participants %}disabled{% endif %}>
+              Register
+            </button>
+          </form>
+        {% elif not current_user %}
+          <a href="{{ url_for('login') }}" class="btn btn-outline btn-sm">Sign in</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">📅</div>
+    <h3>No events found</h3>
+    <p>Try adjusting your filters.</p>
+    <a href="{{ url_for('events') }}" class="btn btn-primary" style="margin-top:16px;">Clear Filters</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

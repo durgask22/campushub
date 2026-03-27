@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Club' if mode == 'edit' else 'Create Club' }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:640px;padding-top:40px;padding-bottom:60px;">
+
+  <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm" style="margin-bottom:24px;">← Back to Dashboard</a>
+
+  <div class="card">
+    <div style="padding:28px;border-bottom:1.5px solid var(--border);background:linear-gradient(135deg,var(--ink),#2d3d1e);">
+      <h1 style="color:#fff;font-size:24px;">{{ 'Edit Club Profile' if mode == 'edit' else 'Create a New Club' }}</h1>
+      <p style="color:rgba(255,255,255,.65);margin-top:4px;font-size:14px;">
+        {% if mode == 'create' %}Your club will be reviewed by an admin before going live.{% else %}Update your club's public profile.{% endif %}
+      </p>
+    </div>
+    <div style="padding:32px;">
+      <form method="POST">
+
+        <div class="form-group">
+          <label class="form-label" for="name">Club Name <span class="req">*</span></label>
+          <input type="text" id="name" name="name" class="form-control" required
+            placeholder="e.g. Tech Innovators Club"
+            value="{{ club.name if club else '' }}" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="category">Category <span class="req">*</span></label>
+          <select id="category" name="category" class="form-control" required>
+            {% for cat in ['Technology','Environment','Academic','Arts','Business','Sports','Other'] %}
+            <option value="{{ cat }}" {{ 'selected' if club and club.category == cat }}>{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">Description <span class="req">*</span></label>
+          <textarea id="description" name="description" class="form-control" rows="5" required
+            placeholder="Tell students what your club is about, what you do, and why they should join…">{{ club.description if club else '' }}</textarea>
+          <div class="form-hint">Write a compelling description (50–500 characters recommended).</div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:8px;">
+          <button type="submit" class="btn btn-primary btn-lg">
+            {{ 'Save Changes' if mode == 'edit' else 'Submit Club →' }}
+          </button>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-lg">Cancel</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

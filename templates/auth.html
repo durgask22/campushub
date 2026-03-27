@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Sign In' if mode == 'login' else 'Create Account' }}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card fade-in">
+
+    <!-- Header -->
+    <div class="auth-header">
+      <div class="auth-logo">Campus<span>Hub</span></div>
+      <div class="auth-subtitle">College Club Event Management System</div>
+    </div>
+
+    <div class="auth-body">
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else category }}" style="margin-bottom:16px;">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Tab Toggle -->
+      <div class="auth-tabs">
+        <button class="auth-tab {{ 'active' if mode == 'login' }}"
+          onclick="window.location='{{ url_for('login') }}'">Sign In</button>
+        <button class="auth-tab {{ 'active' if mode == 'register' }}"
+          onclick="window.location='{{ url_for('register') }}'">Create Account</button>
+      </div>
+
+      <!-- ── Login Form ──────────────────────────────────────────────── -->
+      {% if mode == 'login' %}
+      <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <div class="input-icon-wrap">
+            <span class="icon">✉</span>
+            <input type="email" id="email" name="email" class="form-control"
+              placeholder="you@college.edu" required autocomplete="email" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-icon-wrap">
+            <span class="icon">🔒</span>
+            <input type="password" id="password" name="password" class="form-control"
+              placeholder="Your password" required />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top:8px;">
+          Sign In →
+        </button>
+        <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:14px;">
+          Don't have an account? <a href="{{ url_for('register') }}">Create one</a>
+        </p>
+      </form>
+
+      <!-- ── Register Form ─────────────────────────────────────────── -->
+      {% else %}
+      <form method="POST" action="{{ url_for('register') }}">
+        <div class="form-group">
+          <label class="form-label" for="name">Full Name <span class="req">*</span></label>
+          <input type="text" id="name" name="name" class="form-control"
+            placeholder="Your full name" required minlength="2" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address <span class="req">*</span></label>
+          <input type="email" id="email" name="email" class="form-control"
+            placeholder="you@college.edu" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password <span class="req">*</span></label>
+          <input type="password" id="password" name="password" class="form-control"
+            placeholder="Minimum 6 characters" required minlength="6" />
+          <div class="form-hint">Use at least 6 characters for security.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="role">I am a</label>
+          <select id="role" name="role" class="form-control">
+            <option value="student">Student</option>
+            <option value="club_admin">Club Admin (create & manage a club)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top:8px;">
+          Create Account →
+        </button>
+        <p style="text-align:center;font-size:13px;color:var(--muted);margin-top:14px;">
+          Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+        </p>
+      </form>
+      {% endif %}
+
+    </div><!-- /auth-body -->
+  </div><!-- /auth-card -->
+</div>
+{% endblock %}

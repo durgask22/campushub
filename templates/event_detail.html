@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:32px;padding-bottom:56px;">
+
+  <a href="{{ url_for('events') }}" class="btn btn-ghost btn-sm" style="margin-bottom:20px;">← Back to Events</a>
+
+  <!-- Cover -->
+  <div class="detail-cover {{ event.category|lower if event.category else '' }}">
+    <div class="detail-cover-badges">
+      <span class="badge badge-{{ event.status }}">{{ event.status|capitalize }}</span>
+      {% if event.category %}<span class="badge badge-cat">{{ event.category }}</span>{% endif %}
+    </div>
+    <div style="position:absolute;bottom:20px;left:24px;right:24px;z-index:2;">
+      <div style="font-size:13px;color:rgba(255,255,255,.7);margin-bottom:6px;">{{ event.club_name }}</div>
+      <h1 style="color:#fff;font-size:clamp(20px,4vw,32px);">{{ event.title }}</h1>
+    </div>
+  </div>
+
+  <!-- Participation status bar -->
+  {% set pct = (event.reg_count / event.max_participants * 100)|int %}
+  <div style="background:#fff;border:1.5px solid var(--border);border-top:none;padding:14px 24px;margin-bottom:24px;display:flex;align-items:center;gap:16px;border-radius:0 0 var(--r-lg) var(--r-lg);flex-wrap:wrap;">
+    <div style="flex:1;min-width:200px;">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;">
+        <span>{{ event.reg_count }} registered</span>
+        <span>{{ event.max_participants - event.reg_count }} spots left</span>
+      </div>
+      <div class="progress-bar-wrap" data-progress="{{ pct }}">
+        <div class="progress-bar-fill" style="width:0%"></div>
+      </div>
+    </div>
+    {% if current_user %}
+      {% if event.status == 'completed' %}
+        <span class="badge badge-completed" style="padding:8px 16px;">Event Completed</span>
+      {% elif is_registered %}
+        <form method="POST" action="{{ url_for('unregister_event', event_id=event.id) }}"
+          onsubmit="return confirm('Unregister from this event?')">
+          <button type="submit" class="btn btn-ghost btn-sm" style="border-color:var(--red);color:var(--red);">Unregister</button>
+        </form>
+      {% elif event.reg_count >= event.max_participants %}
+        <button class="btn btn-ghost btn-sm" disabled>Event Full</button>
+      {% else %}
+        <form method="POST" action="{{ url_for('register_event', event_id=event.id) }}" class="register-form">
+          <button type="submit" class="btn btn-primary">Register Now →</button>
+        </form>
+      {% endif %}
+    {% else %}
+      <a href="{{ url_for('login') }}" class="btn btn-primary">Sign In to Register</a>
+    {% endif %}
+    {% if is_registered %}
+      <span class="badge badge-approved" style="padding:8px 14px;">✓ Registered</span>
+    {% endif %}
+  </div>
+
+  <div class="detail-layout">
+    <!-- Left -->
+    <div>
+      <div class="info-card">
+        <h3>About This Event</h3>
+        <p style="color:var(--muted);line-height:1.85;font-size:14.5px;">{{ event.description }}</p>
+      </div>
+
+      <!-- Countdown -->
+      {% if event.status == 'upcoming' %}
+      <div class="info-card" style="background:var(--accent-light);border-color:var(--accent)33;text-align:center;">
+        <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Time Until Event</div>
+        <div style="font-family:var(--font-display);font-size:28px;color:var(--accent);" data-countdown="{{ event.event_date }}T{{ event.event_time }}">--d --h --m</div>
+      </div>
+      {% endif %}
+
+      <!-- Participants (admin only) -->
+      {% if can_see_participants and participants %}
+      <div class="info-card">
+        <h3>Registered Participants ({{ participants|length }})</h3>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Name</th><th>Email</th><th>Registered</th></tr></thead>
+            <tbody>
+              {% for p in participants %}
+              <tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div class="member-avatar" style="width:28px;height:28px;font-size:10px;">{{ p.name[:2].upper() }}</div>
+                    {{ p.name }}
+                  </div>
+                </td>
+                <td style="color:var(--muted);">{{ p.email }}</td>
+                <td style="color:var(--muted);">{{ p.registered_at[:10] if p.registered_at else '' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right: Info Sidebar -->
+    <div>
+      <div class="info-card">
+        <h3>Event Details</h3>
+        <div class="info-row">
+          <span class="label">📅 Date</span>
+          <span class="value">{{ event.event_date }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">⏰ Time</span>
+          <span class="value">{{ event.event_time }}</span>
+        </div>
+        {% if event.end_date and event.end_date != event.event_date %}
+        <div class="info-row">
+          <span class="label">🏁 End Date</span>
+          <span class="value">{{ event.end_date }}</span>
+        </div>
+        {% endif %}
+        <div class="info-row">
+          <span class="label">📍 Venue</span>
+          <span class="value" style="max-width:160px;text-align:right;">{{ event.venue }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">👥 Capacity</span>
+          <span class="value">{{ event.reg_count }}/{{ event.max_participants }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">🏷 Category</span>
+          <span class="value">{{ event.category or '—' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Status</span>
+          <span class="value"><span class="badge badge-{{ event.status }}">{{ event.status|capitalize }}</span></span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h3>Organized by</h3>
+        <a href="{{ url_for('club_detail', club_id=event.cid) }}"
+          style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;">
+          <div class="member-avatar" style="border-radius:10px;">{{ event.club_name[:2].upper() }}</div>
+          <div>
+            <div style="font-weight:600;font-size:14px;">{{ event.club_name }}</div>
+            <div style="font-size:12px;color:var(--accent);">View Club →</div>
+          </div>
+        </a>
+      </div>
+
+      {% if current_user and (current_user.role == 'club_admin' or current_user.role == 'super_admin') %}
+      <div class="info-card" style="border-color:var(--amber)33;background:var(--amber-bg);">
+        <h3 style="color:var(--amber);">Admin Actions</h3>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <a href="{{ url_for('edit_event', event_id=event.id) }}" class="btn btn-outline btn-sm btn-block">Edit Event</a>
+          <form method="POST" action="{{ url_for('delete_event', event_id=event.id) }}"
+            onsubmit="return confirm('Delete this event permanently?')">
+            <button type="submit" class="btn btn-danger btn-sm btn-block">Delete Event</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

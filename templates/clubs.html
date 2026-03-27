@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Clubs{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+  <div class="container page-hero-inner">
+    <h1>Campus Clubs</h1>
+    <p>Find your community. Explore {{ clubs|length }} active clubs across campus.</p>
+  </div>
+</div>
+
+<div class="container" style="padding-top:36px;padding-bottom:56px;">
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <form method="GET" action="{{ url_for('clubs') }}" style="display:contents;">
+      <div class="input-icon-wrap" style="flex:1;min-width:200px;">
+        <span class="icon">🔍</span>
+        <input type="text" name="q" class="form-control" placeholder="Search clubs…"
+          value="{{ search }}" style="margin-bottom:0;" />
+      </div>
+      <div class="filter-chips">
+        <a href="{{ url_for('clubs') }}"
+          class="filter-chip {{ 'active' if not selected_cat }}">All</a>
+        {% for cat in categories %}
+        <a href="{{ url_for('clubs', cat=cat.category, q=search) }}"
+          class="filter-chip {{ 'active' if selected_cat == cat.category }}">{{ cat.category }}</a>
+        {% endfor %}
+      </div>
+      {% if search %}
+        <button type="submit" class="btn btn-primary btn-sm">Search</button>
+        <a href="{{ url_for('clubs') }}" class="btn btn-ghost btn-sm">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Results Count -->
+  <div style="margin-bottom:20px;font-size:14px;color:var(--muted);">
+    Showing <strong style="color:var(--ink2);">{{ clubs|length }}</strong> clubs
+    {% if selected_cat %}in <strong>{{ selected_cat }}</strong>{% endif %}
+    {% if search %}matching "<strong>{{ search }}</strong>"{% endif %}
+  </div>
+
+  <!-- Club Grid -->
+  {% if clubs %}
+  <div class="grid-auto">
+    {% for club in clubs %}
+    <div class="card card-hover fade-in">
+      <div class="card-cover {{ club.category|lower if club.category else '' }}">
+        <div style="position:absolute;bottom:12px;left:14px;z-index:2;">
+          <span class="badge badge-cat">{{ club.category }}</span>
+        </div>
+        <div style="position:absolute;top:12px;right:12px;z-index:2;font-size:28px;opacity:.15;color:#fff;">
+          {% if club.category == 'Technology' %}💻
+          {% elif club.category == 'Environment' %}🌿
+          {% elif club.category == 'Academic' %}📚
+          {% elif club.category == 'Arts' %}🎨
+          {% elif club.category == 'Business' %}💼
+          {% elif club.category == 'Sports' %}⚽
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">{{ club.name }}</h3>
+        <p class="card-excerpt">{{ club.description }}</p>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px;font-size:12px;color:var(--muted);">
+          <span>👥 {{ club.member_count }} members</span>
+          <span>📅 {{ club.event_count }} events</span>
+        </div>
+      </div>
+      <div class="card-footer" style="display:flex;gap:8px;">
+        <a href="{{ url_for('club_detail', club_id=club.id) }}" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;">View Club</a>
+        {% if current_user and current_user.role == 'student' %}
+          <form method="POST" action="{{ url_for('join_club', club_id=club.id) }}">
+            <button type="submit" class="btn btn-outline btn-sm">Join</button>
+          </form>
+        {% elif not current_user %}
+          <a href="{{ url_for('login') }}" class="btn btn-outline btn-sm">Join</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">🔍</div>
+    <h3>No clubs found</h3>
+    <p>Try adjusting your search or browse all categories.</p>
+    <a href="{{ url_for('clubs') }}" class="btn btn-primary" style="margin-top:16px;">Clear Filters</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

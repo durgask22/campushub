@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <span class="sidebar-heading">Navigation</span>
+      <a href="{{ url_for('home') }}"      class="sidebar-link">🏠 Home</a>
+      <a href="{{ url_for('clubs') }}"     class="sidebar-link">◎ Clubs</a>
+      <a href="{{ url_for('events') }}"    class="sidebar-link">◈ Events</a>
+      <a href="{{ url_for('dashboard') }}" class="sidebar-link active">⊟ Dashboard</a>
+    </div>
+    <div class="sidebar-section" style="margin-top:8px;">
+      <span class="sidebar-heading">Account</span>
+      <a href="{{ url_for('logout') }}" class="sidebar-link">⎋ Logout</a>
+    </div>
+    <div style="padding:16px 14px;margin-top:auto;">
+      <div style="background:var(--accent-light);border:1.5px solid var(--accent)33;border-radius:var(--r);padding:14px;">
+        <div class="member-avatar" style="margin-bottom:10px;">{{ current_user.name[:2].upper() }}</div>
+        <div style="font-weight:600;font-size:13px;">{{ current_user.name }}</div>
+        <div style="font-size:11px;color:var(--muted);">{{ current_user.email }}</div>
+        <span class="badge badge-accent" style="margin-top:6px;">Student</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dash-content">
+    <div class="dash-header fade-in">
+      <h1>Welcome back, {{ current_user.name.split()[0] }}! 👋</h1>
+      <p>Here's your campus activity overview.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-card-icon">◎</div>
+        <div class="stat-card-value">{{ my_clubs|length }}</div>
+        <div class="stat-card-label">Clubs Joined</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon">◈</div>
+        <div class="stat-card-value">{{ my_events|length }}</div>
+        <div class="stat-card-label">Events Registered</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon">📅</div>
+        <div class="stat-card-value">{{ my_events|selectattr('status','eq','upcoming')|list|length }}</div>
+        <div class="stat-card-label">Upcoming</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-icon">✓</div>
+        <div class="stat-card-value">{{ my_events|selectattr('status','eq','completed')|list|length }}</div>
+        <div class="stat-card-label">Attended</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tab-events">My Events</button>
+      <button class="tab-btn" data-tab="tab-clubs">My Clubs</button>
+    </div>
+    <div>
+      <!-- My Events -->
+      <div class="tab-panel active" id="tab-events">
+        {% if my_events %}
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          {% for event in my_events %}
+          <div class="card" style="display:flex;gap:0;overflow:hidden;">
+            <div style="width:4px;background:{{ 'var(--blue)' if event.status=='upcoming' else ('var(--green)' if event.status=='ongoing' else 'var(--parchment)') }};"></div>
+            <div style="padding:16px 18px;flex:1;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+              <div>
+                <h4 style="font-size:15px;margin-bottom:4px;">{{ event.title }}</h4>
+                <div style="font-size:12px;color:var(--muted);">{{ event.club_name }}</div>
+                <div style="display:flex;gap:14px;margin-top:8px;font-size:12px;color:var(--muted);">
+                  <span>📅 {{ event.event_date }} · {{ event.event_time }}</span>
+                  <span>📍 {{ event.venue }}</span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:4px;">Registered: {{ event.registered_at[:10] if event.registered_at else '' }}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;">
+                <span class="badge badge-{{ event.status }}">{{ event.status|capitalize }}</span>
+                <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-ghost btn-sm">View</a>
+                {% if event.status != 'completed' %}
+                <form method="POST" action="{{ url_for('unregister_event', event_id=event.id) }}"
+                  onsubmit="return confirm('Unregister from this event?')">
+                  <button type="submit" class="btn btn-sm" style="border:1.5px solid var(--red);color:var(--red);background:none;">Unregister</button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">📅</div>
+          <h3>No event registrations yet</h3>
+          <p>Explore events and register to see them here.</p>
+          <a href="{{ url_for('events') }}" class="btn btn-primary" style="margin-top:16px;">Browse Events</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- My Clubs -->
+      <div class="tab-panel" id="tab-clubs">
+        {% if my_clubs %}
+        <div class="grid-auto-sm">
+          {% for club in my_clubs %}
+          <div class="card card-hover">
+            <div class="card-cover {{ club.category|lower if club.category else '' }}" style="height:80px;">
+              <div style="position:absolute;bottom:8px;left:12px;z-index:2;">
+                <span class="badge badge-cat">{{ club.category }}</span>
+              </div>
+            </div>
+            <div class="card-body" style="padding:14px;">
+              <h3 class="card-title" style="font-size:14px;">{{ club.name }}</h3>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px;">
+                👥 {{ club.member_count }} members · Joined {{ club.joined_at[:10] if club.joined_at else '' }}
+              </div>
+            </div>
+            <div class="card-footer" style="display:flex;gap:8px;">
+              <a href="{{ url_for('club_detail', club_id=club.id) }}" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;">View</a>
+              <form method="POST" action="{{ url_for('leave_club', club_id=club.id) }}"
+                onsubmit="return confirm('Leave {{ club.name }}?')">
+                <button type="submit" class="btn btn-sm" style="border:1.5px solid var(--red);color:var(--red);background:none;">Leave</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon">◎</div>
+          <h3>No clubs joined yet</h3>
+          <p>Discover clubs that match your interests.</p>
+          <a href="{{ url_for('clubs') }}" class="btn btn-primary" style="margin-top:16px;">Explore Clubs</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </main>
+</div>
+{% endblock %}
