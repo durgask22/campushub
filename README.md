@@ -282,18 +282,6 @@ pip install -r requirements.txt
 ## 👨‍💻 Author
 
 **Durga**
-B.Tech Computer Science
-SRM Institute of Science and Technology, Chennai
-
----
-
-## 📄 License
-
-This project is developed for academic purposes as part of the
-B.Tech Computer Science curriculum at SRM Institute of Science
-and Technology, Chennai.
-
----
 
 ## 🙏 Acknowledgements
 
